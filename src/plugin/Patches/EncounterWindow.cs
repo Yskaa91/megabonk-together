@@ -88,7 +88,8 @@ namespace MegabonkTogether.Patches
         }
 
         /// <summary>
-        /// Prevent pause on netplay reward pop (Shady guy and other) on non shared experience
+        /// Prevent pause on netplay reward pop (Shady guy and other) on non shared experience,
+        /// and grant 8 seconds of invulnerability from the moment the reward pops up.
         /// </summary>
         [HarmonyPostfix]
         [HarmonyPatch(nameof(EncounterWindows.PopReward))]
@@ -106,6 +107,13 @@ namespace MegabonkTogether.Patches
             }
 
             MyTime.Unpause();
+
+            if (!GameManager.Instance.player.playerInput.CanInput())
+            {
+                return;
+            }
+
+            InvulnerabilityHelper.StartInvulnerable();
         }
 
         /// <summary>
