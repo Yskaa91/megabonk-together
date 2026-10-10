@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.2.0
+
+- 🛡️ **8 seconds of invulnerability on reward screens (non-shared experience)**: Level-up, chest and encounter popups now protect the player for 8 seconds, since the game does not pause in this mode
+
 ### v5.1.0
 
 - 🚀 **More code optimizations one more time !**
