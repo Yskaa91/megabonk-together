@@ -121,7 +121,7 @@ namespace MegabonkTogether.Patches
                 if (Plugin.Instance.IS_MANUAL_INVINCIBLE)
                 {
                     Plugin.Instance.IS_MANUAL_INVINCIBLE = false;
-                    GameManager.Instance.player.isTeleporting = false;
+                    GameManager.Instance.player.isInvincible = false;
                     return true;
                 }
 
@@ -137,7 +137,7 @@ namespace MegabonkTogether.Patches
                 if (Plugin.Instance.IS_MANUAL_INVINCIBLE)
                 {
                     Plugin.Instance.IS_MANUAL_INVINCIBLE = false;
-                    GameManager.Instance.player.isTeleporting = false;
+                    GameManager.Instance.player.isInvincible = false;
                     return true;
                 }
 

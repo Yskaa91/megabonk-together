@@ -47,5 +47,30 @@ namespace MegabonkTogether.Patches
 
             return true;
         }
+        /// <summary>
+        /// Block all incoming damage on the local player while the reward-screen
+        /// invulnerability window is active. Remote players are unaffected.
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(PlayerHealth.Damage))]
+        public static bool Damage_Prefix(PlayerHealth __instance)
+        {
+            if (!synchronizationService.HasNetplaySessionStarted())
+            {
+                return true;
+            }
+
+            if (playerManagerService.IsRemotePlayerHealth(__instance))
+            {
+                return true;
+            }
+
+            if (Plugin.Instance.IS_MANUAL_INVINCIBLE)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 }
