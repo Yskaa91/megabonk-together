@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.2.1
+
+- 🛡️ **Reward invulnerability reworked**: Reduced to 5 seconds and now uses the native player invincibility flag, so interacting with objects and chests (E button) works while invulnerable
+
 ### v5.2.0
 
 - 🛡️ **8 seconds of invulnerability on reward screens (non-shared experience)**: Level-up, chest and encounter popups now protect the player for 8 seconds, since the game does not pause in this mode
