@@ -43,6 +43,11 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.11
+
+- ⏱️ **Reward invulnerability reduced to 3 seconds** (was 5)
+- 🔧 **Fixed the auto-updater on paths with spaces**: the generated batch file kept the quotes around the plugin directory and aborted before extracting
+
 ### v5.3.10
 
 - 💰 **Gold gain normalized**: in shared experience the shared gold pool is divided by the player count, so income matches a solo run. Chest prices keep their normal progression

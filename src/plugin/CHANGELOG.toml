@@ -6,6 +6,12 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.11"]
+changes = [
+    "Reward invulnerability reduced from 5 to 3 seconds",
+    "Fixed the auto-updater failing to apply updates when the plugin path contains spaces, such as Program Files",
+]
+
 [version."5.3.10"]
 changes = [
     "Shared experience gold gain is divided by the player count, so the shared pool grows at the solo rate. Chest prices keep their normal progression",
