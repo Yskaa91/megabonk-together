@@ -347,8 +347,8 @@ namespace MegabonkTogether.Common
                 batchContent.AppendLine("REM  Applies updates after game exits");
                 batchContent.AppendLine("REM ========================================");
                 batchContent.AppendLine();
-                batchContent.AppendLine("set GAME_PID=%1");
-                batchContent.AppendLine("set PLUGIN_DIR=%2");
+                batchContent.AppendLine("set GAME_PID=%~1");
+                batchContent.AppendLine("set PLUGIN_DIR=%~2");
                 batchContent.AppendLine();
                 batchContent.AppendLine("if \"%GAME_PID%\"==\"\" (");
                 batchContent.AppendLine("    echo ERROR: Missing game process ID");
@@ -400,7 +400,7 @@ namespace MegabonkTogether.Common
                 batchContent.AppendLine("echo.");
                 batchContent.AppendLine();
                 batchContent.AppendLine("REM backup");
-                batchContent.AppendLine("set PLUGIN_DLL=%PLUGIN_DIR%\\MegabonkTogether.Plugin.dll");
+                batchContent.AppendLine("set PLUGIN_DLL=%PLUGIN_DIR%\\MegabonkTogether.dll");
                 batchContent.AppendLine("set BACKUP_DLL=%PLUGIN_DLL%.backup");
                 batchContent.AppendLine();
                 batchContent.AppendLine("if exist \"%PLUGIN_DLL%\" (");
