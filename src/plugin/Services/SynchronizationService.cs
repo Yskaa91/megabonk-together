@@ -148,6 +148,7 @@ namespace MegabonkTogether.Services
         private readonly ConcurrentBag<SpawnedObjectInCrypt> toUpdate = [];
         private readonly ConcurrentQueue<SpawnedEnemy> pendingEnemySpawns = new();
         private readonly Dictionary<uint, EnemyDied> deathsBeforeSpawn = new();
+        private readonly Dictionary<uint, List<IGameNetworkMessage>> pendingPickupMessages = new();
         private readonly Dictionary<EEnemy, Material> clonedExtraEnemyMaterials = [];
         private Coroutine newObjectToSpawnRoutine;
         private Coroutine pendingEnemySpawnRoutine;
@@ -713,6 +714,7 @@ namespace MegabonkTogether.Services
 
             pendingEnemySpawns.Clear();
             deathsBeforeSpawn.Clear();
+            pendingPickupMessages.Clear();
             Patches.Enemies.EnemyPatch.EnemiesDistanceThrottler.ClearAll();
 
             Plugin.Instance.NetPlayersDisplayer.ResetCards();
@@ -1736,7 +1738,9 @@ namespace MegabonkTogether.Services
                 Id = netplayId,
                 Pickup = (int)ePickup,
                 Position = pos.ToNumericsVector3(),
-                Value = value
+                // Send the effective value: the host overrides it for XP above, and clients
+                // apply the pickup locally, so they must see the same amount.
+                Value = pickup.value
             };
 
             udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
@@ -1745,8 +1749,15 @@ namespace MegabonkTogether.Services
         private void OnReceivedSpawnedPickup(SpawnedPickup pickup)
         {
             Plugin.CAN_SPAWN_PICKUPS = true;
-            var spawnedPickup = PickupManager.Instance.SpawnPickup((EPickup)pickup.Pickup, pickup.Position.ToUnityVector3(), pickup.Value, false);
-            Plugin.CAN_SPAWN_PICKUPS = false;
+            Pickup spawnedPickup;
+            try
+            {
+                spawnedPickup = PickupManager.Instance.SpawnPickup((EPickup)pickup.Pickup, pickup.Position.ToUnityVector3(), pickup.Value, false);
+            }
+            finally
+            {
+                Plugin.CAN_SPAWN_PICKUPS = false;
+            }
 
             //if (spawnedPickup.ePickup == EPickup.Xp && !IsSharedExperienceEnabled())
             //{
@@ -1759,6 +1770,8 @@ namespace MegabonkTogether.Services
 
             pickupManagerService.SetSpawnedPickup(pickup.Id, spawnedPickup);
             dynP.Set("pickupId", pickup.Id);
+
+            FlushPickupMessages(pickup.Id);
         }
 
         public void OnPickupOrbSpawned(EPickup ePickup, Vector3 pos)
@@ -1777,6 +1790,51 @@ namespace MegabonkTogether.Services
             Plugin.CAN_SPAWN_PICKUPS = true;
             EffectManager.Instance.SpawnPickupOrb((EPickup)pickup.Pickup, pickup.Position.ToUnityVector3());
             Plugin.CAN_SPAWN_PICKUPS = false;
+        }
+
+        /// <summary>
+        /// Pickup spawns and pickup events travel on unreliable-ordered channels and can
+        /// arrive in any order. Hold an event for a pickup that has not spawned yet and
+        /// replay it once the pickup exists, instead of dropping the effect.
+        /// </summary>
+        private void DeferPickupMessage(uint pickupId, IGameNetworkMessage message)
+        {
+            if (pickupId == 0)
+            {
+                return; // Not a synchronized pickup (id 0 means "not registered").
+            }
+
+            if (!pendingPickupMessages.TryGetValue(pickupId, out var messages))
+            {
+                messages = [];
+                pendingPickupMessages[pickupId] = messages;
+            }
+
+            messages.Add(message);
+        }
+
+        private void FlushPickupMessages(uint pickupId)
+        {
+            if (!pendingPickupMessages.Remove(pickupId, out var messages))
+            {
+                return;
+            }
+
+            foreach (var message in messages)
+            {
+                switch (message)
+                {
+                    case PickupApplied applied:
+                        OnReceivedPickupApplied(applied);
+                        break;
+                    case WantToStartFollowingPickup want:
+                        OnReceivedWantToStartFollowingPickup(want);
+                        break;
+                    case PickupFollowingPlayer following:
+                        OnReceivedPickupFollowingPlayer(following);
+                        break;
+                }
+            }
         }
 
         public void OnPickupApplied(Pickup instance)
@@ -1816,15 +1874,21 @@ namespace MegabonkTogether.Services
             var pickup = pickupManagerService.GetSpawnedPickupById(applied.PickupId);
             if (pickup == null)
             {
-                logger.LogWarning($"Pickup {applied.PickupId} for owner {applied.OwnerId} not found in PickupManagerService when processing OnReceivedPickupApplied.");
+                DeferPickupMessage(applied.PickupId, applied);
                 return;
             }
 
             if (pickup.ePickup == EPickup.Time || pickup.ePickup == EPickup.Magnet) //Apply for all clients
             {
                 Plugin.CAN_SEND_MESSAGES = false;
-                pickup.ApplyPickup();
-                Plugin.CAN_SEND_MESSAGES = true;
+                try
+                {
+                    pickup.ApplyPickup();
+                }
+                finally
+                {
+                    Plugin.CAN_SEND_MESSAGES = true;
+                }
             }
             //else if (pickup.ePickup == EPickup.Xp && IsSharedExperienceEnabled()) //Apply xp pickup for all clients if shared xp enabled
             //{
@@ -1902,7 +1966,7 @@ namespace MegabonkTogether.Services
             var pickup = pickupManagerService.GetSpawnedPickupById(player.PickupId);
             if (pickup == null)
             {
-                logger.LogWarning($"Pickup {player.PickupId} not found in PickupManagerService when processing OnReceivedPickupFollowingPlayer by player {player.PlayerId}.");
+                DeferPickupMessage(player.PickupId, player);
                 return;
             }
 
@@ -1929,8 +1993,14 @@ namespace MegabonkTogether.Services
             dynPickup.Set("ownerId", player.PlayerId);
 
             Plugin.CAN_SEND_MESSAGES = false;
-            pickup.StartFollowingPlayer(target);
-            Plugin.CAN_SEND_MESSAGES = true;
+            try
+            {
+                pickup.StartFollowingPlayer(target);
+            }
+            finally
+            {
+                Plugin.CAN_SEND_MESSAGES = true;
+            }
         }
 
         public void OnWantToStartFollowingPickup(Pickup instance)
@@ -1960,7 +2030,7 @@ namespace MegabonkTogether.Services
             var pickup = pickupManagerService.GetSpawnedPickupById(pickupId);
             if (pickup == null)
             {
-                logger.LogWarning($"Pickup {pickupId} not found in PickupManagerService when processing HandleWantToStartFollowingPickup.");
+                DeferPickupMessage(pickupId, new WantToStartFollowingPickup { PickupId = pickupId, OwnerId = ownerId });
                 return;
             }
 
