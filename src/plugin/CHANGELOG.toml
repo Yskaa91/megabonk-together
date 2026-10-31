@@ -6,6 +6,11 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.6"]
+changes = [
+    "Reward windows can no longer be chosen with the keyboard or space bar during a netplay session; use the mouse. This prevents jumping with space from accidentally picking a reward",
+]
+
 [version."5.3.5"]
 changes = [
     "Shrines, microwave, paid chests and the shady guy no longer pause the game and show 'Waiting for other player(s) choices' when you are dead or cannot participate. The game keeps running and only the players who can participate get the reward",

@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.6
+
+- 🖱️ **Reward windows are mouse-only in netplay**: keyboard and space bar no longer pick a reward, so jumping cannot accidentally select one
+
 ### v5.3.5
 
 - ⏱️ **No more "Waiting for other player(s) choices" at shrines, microwave, paid chests and the shady guy**: dead or broke players no longer pause the game, they simply skip that reward
