@@ -28,6 +28,12 @@ namespace MegabonkTogether.Patches
                 return;
             }
 
+            // Banish mutates the shared loot pool and desyncs the other clients.
+            if (__instance.b_banish != null)
+            {
+                __instance.b_banish.gameObject.SetActive(false);
+            }
+
             if (!GameManager.Instance.player.playerInput.CanInput())
             {
                 Plugin.Log.LogInfo("Player cannot input, skipping invincibility on level up screen open.");
@@ -89,6 +95,24 @@ namespace MegabonkTogether.Patches
                 infoText.color = Color.white;
                 InteractableShadyGuy.currentlyInteracting = null;
             }
+        }
+
+        /// <summary>
+        /// Banish changes the shared loot pool, which the other clients do not see and
+        /// which can leave their reward window stuck. Disable it in netplay.
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(LevelupScreen.StartBanish))]
+        public static bool StartBanish_Prefix()
+        {
+            return !synchronizationService.HasNetplaySessionStarted();
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(LevelupScreen.Banish))]
+        public static bool Banish_Prefix()
+        {
+            return !synchronizationService.HasNetplaySessionStarted();
         }
 
     }

@@ -6,6 +6,11 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.7"]
+changes = [
+    "Banish is now disabled on the level-up screen too, not only on the chest window. The banish button is hidden and the banish action is blocked during a netplay session",
+]
+
 [version."5.3.6"]
 changes = [
     "Reward windows can no longer be chosen with the keyboard or space bar during a netplay session; use the mouse. This prevents jumping with space from accidentally picking a reward",

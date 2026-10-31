@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.7
+
+- 🚫 **Banish disabled on the level-up screen too**: the button is hidden and the banish action is blocked in netplay, not only on the chest window
+
 ### v5.3.6
 
 - 🖱️ **Reward windows are mouse-only in netplay**: keyboard and space bar no longer pick a reward, so jumping cannot accidentally select one
