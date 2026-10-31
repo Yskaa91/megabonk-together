@@ -43,6 +43,14 @@ namespace MegabonkTogether.Services
 
         public void Poll();
 
+        /// <summary>
+        /// While true, received messages are queued instead of dispatched. Used during
+        /// level loading so the transport keeps polling (keepalives) without handlers
+        /// touching a half-loaded scene.
+        /// </summary>
+        public bool DeferMessages { get; set; }
+        public void FlushDeferredMessages();
+
         public Task<bool> HandleMatch(MatchInfo matchInfo, uint selfConnectionId, string rdvServerHost, uint rdvServerPort, bool enabledSharedExperience);
         public bool HasAllPeersConnected();
 
@@ -118,6 +126,9 @@ namespace MegabonkTogether.Services
 
         private const int POLL_INTERVAL_MS = 5;
 
+        private readonly Queue<(IGameNetworkMessage Message, int NetPeerId)> deferredMessages = new();
+        public bool DeferMessages { get; set; }
+
         private CancellationTokenSource pollingCancelationTokenSource;
 
         public bool Initialize()
@@ -135,7 +146,7 @@ namespace MegabonkTogether.Services
                 UnconnectedMessagesEnabled = true,
                 NatPunchEnabled = true,
                 EnableStatistics = true,
-                DisconnectTimeout = 15000,
+                DisconnectTimeout = 60000,
                 UpdateTime = POLL_INTERVAL_MS
             };
 
@@ -533,6 +544,12 @@ namespace MegabonkTogether.Services
 
         private void HandleMessage(IGameNetworkMessage message, int netPeerId)
         {
+            if (DeferMessages)
+            {
+                deferredMessages.Enqueue((message, netPeerId));
+                return;
+            }
+
             if (!isHost.Value)
             {
                 switch (message)
@@ -1057,6 +1074,8 @@ namespace MegabonkTogether.Services
             gamePeersIntroduced.Clear();
             gamePeersIntroducedByRelay.Clear();
             hasTriedForceRelay = false;
+            deferredMessages.Clear();
+            DeferMessages = false;
 
             lock (relayPeerLock)
             {
@@ -1302,6 +1321,15 @@ namespace MegabonkTogether.Services
             {
                 netManager?.PollEvents();
                 netManager?.NatPunchModule.PollEvents();
+            }
+        }
+
+        public void FlushDeferredMessages()
+        {
+            while (deferredMessages.Count > 0)
+            {
+                var (message, netPeerId) = deferredMessages.Dequeue();
+                HandleMessage(message, netPeerId);
             }
         }
 

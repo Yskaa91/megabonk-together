@@ -82,8 +82,19 @@ namespace MegabonkTogether.Scripts
 
                 if (hasFoundMatch == null) return;
 
-                if (!hasFoundMatch.HasValue && !hasFoundMatch.Value || synchronizationService.IsLoadingNextLevel()) return;
+                if (!hasFoundMatch.HasValue && !hasFoundMatch.Value || synchronizationService.IsLoadingNextLevel())
+                {
+                    // Keep polling while a level loads. Without PollEvents LiteNetLib sends
+                    // no keepalives and the host drops the loading client after
+                    // DisconnectTimeout. Received messages are queued until the load ends
+                    // so handlers never touch a half-loaded scene.
+                    udpClientService.DeferMessages = true;
+                    udpClientService.Poll();
+                    return;
+                }
 
+                udpClientService.DeferMessages = false;
+                udpClientService.FlushDeferredMessages();
                 udpClientService.Poll();
 
                 if (GameManager.Instance == null || GameManager.Instance.player == null || GameManager.Instance.player.inventory == null) return;

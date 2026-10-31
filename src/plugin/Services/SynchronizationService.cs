@@ -147,7 +147,7 @@ namespace MegabonkTogether.Services
         private readonly ConcurrentBag<SpawnedObject> toSpawns = [];
         private readonly ConcurrentBag<SpawnedObjectInCrypt> toUpdate = [];
         private readonly ConcurrentQueue<SpawnedEnemy> pendingEnemySpawns = new();
-        private readonly HashSet<uint> enemiesDiedBeforeSpawn = [];
+        private readonly Dictionary<uint, EnemyDied> deathsBeforeSpawn = new();
         private readonly Dictionary<EEnemy, Material> clonedExtraEnemyMaterials = [];
         private Coroutine newObjectToSpawnRoutine;
         private Coroutine pendingEnemySpawnRoutine;
@@ -712,7 +712,7 @@ namespace MegabonkTogether.Services
             currentCoffin = null;
 
             pendingEnemySpawns.Clear();
-            enemiesDiedBeforeSpawn.Clear();
+            deathsBeforeSpawn.Clear();
             Patches.Enemies.EnemyPatch.EnemiesDistanceThrottler.ClearAll();
 
             Plugin.Instance.NetPlayersDisplayer.ResetCards();
@@ -857,14 +857,19 @@ namespace MegabonkTogether.Services
                 var budget = MAX_ENEMY_SPAWNS_PER_FRAME;
                 while (budget-- > 0 && currentState == State.Started && pendingEnemySpawns.TryDequeue(out var spawnedEnemy))
                 {
-                    if (enemiesDiedBeforeSpawn.Remove(spawnedEnemy.Id))
-                    {
-                        continue; //Death message already arrived, don't spawn a ghost
-                    }
+                    var diedBeforeSpawn = deathsBeforeSpawn.Remove(spawnedEnemy.Id, out var death);
 
                     try
                     {
                         ProcessSpawnedEnemy(spawnedEnemy);
+
+                        // The death message arrived before this spawn was processed (different
+                        // delivery channels plus the per-frame spawn budget). Apply it now that
+                        // the enemy exists, otherwise the kill, drop and XP are lost.
+                        if (diedBeforeSpawn)
+                        {
+                            OnReceivedEnemyDied(death);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -1608,7 +1613,7 @@ namespace MegabonkTogether.Services
             if (enemy == null)
             {
                 //don't spawn a ghost :/
-                enemiesDiedBeforeSpawn.Add(died.EnemyId);
+                deathsBeforeSpawn[died.EnemyId] = died;
                 return;
             }
 
