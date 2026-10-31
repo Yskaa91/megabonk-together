@@ -70,6 +70,13 @@ namespace MegabonkTogether.Patches
                 return;
             }
 
+            // Banish changes the shared loot pool and can leave other players' chest
+            // window stuck. Hide it in netplay; BanishButton_Prefix blocks it too.
+            if (__instance.b_banish != null)
+            {
+                __instance.b_banish.gameObject.SetActive(false);
+            }
+
             if (synchronizationService.IsSharedExperienceEnabled())
             {
                 return;
@@ -79,14 +86,12 @@ namespace MegabonkTogether.Patches
             {
                 openButton = __instance.b_open;
             }
-
             __instance.OpenButton();
             __instance.b_open = null;
         }
 
         /// <summary>
-        /// Grant 8 seconds of invulnerability from the moment the chest reward pops up
-        /// in netplay on non shared experience only.
+        /// Grant 8 seconds of invulnerability from the moment the chest reward pops up.
         /// </summary>
         /// <param name="__instance"></param>
         [HarmonyPostfix]
@@ -94,11 +99,6 @@ namespace MegabonkTogether.Patches
         public static void OpeningFinished_Postfix(ChestWindowUi __instance)
         {
             if (!synchronizationService.HasNetplaySessionStarted())
-            {
-                return;
-            }
-
-            if (synchronizationService.IsSharedExperienceEnabled())
             {
                 return;
             }
@@ -112,6 +112,17 @@ namespace MegabonkTogether.Patches
             MyTime.Unpause();
 
             InvulnerabilityHelper.StartInvulnerable();
+        }
+
+        /// <summary>
+        /// Banish mutates the shared loot pool, which the other clients do not see and
+        /// which can leave their chest window stuck. Disable it in netplay.
+        /// </summary>
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(ChestWindowUi.BanishButton))]
+        public static bool BanishButton_Prefix()
+        {
+            return !synchronizationService.HasNetplaySessionStarted();
         }
 
         /// <summary>

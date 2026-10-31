@@ -28,11 +28,6 @@ namespace MegabonkTogether.Patches
                 return;
             }
 
-            if (synchronizationService.IsSharedExperienceEnabled())
-            {
-                return;
-            }
-
             if (!GameManager.Instance.player.playerInput.CanInput())
             {
                 Plugin.Log.LogInfo("Player cannot input, skipping invincibility on level up screen open.");
