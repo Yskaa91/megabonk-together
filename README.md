@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.4
+
+- 🔄 **Update checking enabled for everyone**: existing configs that had it disabled are switched on once. You can disable it again afterwards
+
 ### v5.3.3
 
 - ⏱️ **Shared experience no longer waits for other players**: reward windows close for each player immediately and grant 8 seconds of invulnerability, same as the non-shared mode

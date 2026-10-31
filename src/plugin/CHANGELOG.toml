@@ -6,6 +6,11 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.4"]
+changes = [
+    "Update checking is now enabled once for everyone, including configs that had it disabled. You can disable it again afterwards",
+]
+
 [version."5.3.3"]
 changes = [
     "Shared experience no longer pauses the game and waits for every player to close a reward window. Level-up and chest rewards now unpause and grant the same 8 seconds of invulnerability as the non-shared mode",

@@ -17,6 +17,7 @@ namespace MegabonkTogether.Configuration
         public static ConfigEntry<bool> AllowSavesDuringNetplay { get; private set; }
         public static ConfigEntry<bool> EnabledSharedExperience { get; private set; }
         public static ConfigEntry<bool> LogNetworkDiagnostics { get; private set; }
+        public static ConfigEntry<bool> UpdateCheckForced { get; private set; }
 
         public static void Initialize(ConfigFile config)
         {
@@ -76,6 +77,26 @@ namespace MegabonkTogether.Configuration
                 false,
                 "Log transport diagnostics every 5 seconds (role, peers, reliable queue depth, bytes sent). Useful to diagnose desyncs."
             );
+            UpdateCheckForced = config.Bind(
+                "Updates",
+                "UpdateCheckForced",
+                false,
+                "Internal flag for the one-time update check migration. Do not modify manually."
+            );
+
+            // One-time migration: configs written by older builds may store
+            // CheckForUpdates = false. Enable it once, then respect the user's choice.
+            if (!UpdateCheckForced.Value)
+            {
+                UpdateCheckForced.Value = true;
+
+                if (!CheckForUpdates.Value)
+                {
+                    CheckForUpdates.Value = true;
+                }
+
+                Save();
+            }
         }
 
         public static void Save()
