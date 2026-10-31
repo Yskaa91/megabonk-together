@@ -43,6 +43,11 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.9
+
+- 🎁 **Shared experience chest count now scales with players**: the chests placed per stage are divided by the player count, not only the free chest chance
+- 📋 **Chest spawn log line**: shows the chest count and free chest chance for each stage
+
 ### v5.3.8
 
 - 🎁 **Fixed the second chest freezing the game in shared experience**: the chest open button reference was cleared after the first chest, so the next chest window threw an exception and never opened

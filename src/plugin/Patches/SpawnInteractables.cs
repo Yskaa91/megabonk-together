@@ -14,6 +14,10 @@ namespace MegabonkTogether.Patches
         private static readonly ISynchronizationService synchronizationService = Plugin.Services.GetService<ISynchronizationService>();
         private static readonly IGameBalanceService gameBalanceService = Plugin.Services.GetService<IGameBalanceService>();
 
+        // numChestsPerStage is a static game setting, so keep the original value and
+        // always scale from it instead of multiplying it in place.
+        private static int baseNumChestsPerStage = -1;
+
         /// <summary>
         /// Add prefabs (Spawned by server)
         /// Also adjust free chest spawn rate
@@ -38,7 +42,25 @@ namespace MegabonkTogether.Patches
 
             var freeChestMultiplier = gameBalanceService.GetFreeChestSpawnRateMultiplier();
 
+            if (baseNumChestsPerStage < 0)
+            {
+                baseNumChestsPerStage = SpawnInteractables.numChestsPerStage;
+            }
+
+            var chestsBefore = SpawnInteractables.numChestsPerStage;
+            var chanceBefore = __instance.chanceForFreeChest;
+
             __instance.chanceForFreeChest *= freeChestMultiplier;
+
+            // In shared experience every chest is granted to every player, so the map
+            // count has to be divided as well. Scaling only the free chest chance left
+            // the paid chest count untouched and every player received the full amount.
+            if (synchronizationService.IsSharedExperienceEnabled())
+            {
+                SpawnInteractables.numChestsPerStage = System.Math.Max(1, (int)System.Math.Round(baseNumChestsPerStage * freeChestMultiplier));
+            }
+
+            Plugin.Log.LogInfo($"[GameBalance] Chests: count {chestsBefore} -> {SpawnInteractables.numChestsPerStage} (base {baseNumChestsPerStage}), free chance {chanceBefore:F2} -> {__instance.chanceForFreeChest:F2} (multiplier {freeChestMultiplier:F2})");
 
             return true;
         }

@@ -6,6 +6,12 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.9"]
+changes = [
+    "Shared experience: the number of chests placed per stage is now divided by the player count too, not only the free chest chance. Previously every player still received the full solo chest count",
+    "Added a chest spawn log line showing the chest count and free chest chance for each stage",
+]
+
 [version."5.3.8"]
 changes = [
     "Fixed the game getting stuck on the second chest in shared experience: the chest open button reference was cleared after the first chest, so the next chest window threw an exception and never opened",
