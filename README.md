@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.12
+
+- 💥 **Fixed the host crash at stage start in shared experience**: the chest count normalization wrote to a read-only game constant and crashed IL2CPP. The writable chest density is scaled instead
+
 ### v5.3.11
 
 - ⏱️ **Reward invulnerability reduced to 3 seconds** (was 5)

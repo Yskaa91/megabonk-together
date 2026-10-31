@@ -6,6 +6,11 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.12"]
+changes = [
+    "Fixed the host crashing at stage start in shared experience: the chest count normalization wrote to a read-only game constant, which crashes IL2CPP. The chest density is scaled instead",
+]
+
 [version."5.3.11"]
 changes = [
     "Reward invulnerability reduced from 5 to 3 seconds",
