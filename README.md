@@ -43,6 +43,14 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.1
+
+- 🚪 **Fixed portal disconnect**: a client loading the next stage no longer times out. The transport keeps polling during the load and the disconnect timeout is 60 seconds
+- 💀 **Fixed the kill counter**: enemy deaths that arrive before their spawn is processed are now applied instead of dropped, so client kills, drops and XP are no longer lost
+- 🎁 **Fixed dropped pickup effects**: pickup events that arrive before their spawn are now replayed instead of ignored
+- ⭐ **Fixed XP orb value on clients**: client-collected orbs now give the same XP as on the host
+- 🧰 **Shared experience chests**: chest spawn rate is divided by the player count, since one opened chest rewards every player
+
 ### v5.3.0
 
 - 🔧 **Fixed client desyncs with 3+ players**: high-frequency state and combat updates no longer flood the reliable channel, so chests, damage, weapons and interactions stay in sync for every client

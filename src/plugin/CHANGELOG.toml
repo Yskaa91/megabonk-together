@@ -6,6 +6,15 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.1"]
+changes = [
+    "Fixed a player being disconnected when passing through the portal: the transport now keeps polling while the next stage loads, and the disconnect timeout is 60 seconds",
+    "Fixed the kill counter: enemy deaths that arrive before their spawn is processed are now applied instead of dropped, so client kills, drops and XP are no longer lost",
+    "Fixed pickup effects being dropped when the pickup event arrived before its spawn",
+    "Fixed XP orbs spawned on clients using the wrong value, so client-collected orbs now give the same XP as on the host",
+    "Shared experience: chest spawn rate is now divided by the player count, since one opened chest rewards every player",
+]
+
 [version."5.3.0"]
 changes = [
     "Fixed client desyncs with 3+ players: high-frequency state and combat updates no longer flood the reliable channel, so chests, damage, weapons and interactions stay in sync",
