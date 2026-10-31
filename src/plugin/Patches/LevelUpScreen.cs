@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Utility;
+using Assets.Scripts.Utility;
 using HarmonyLib;
 using MegabonkTogether.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +14,7 @@ namespace MegabonkTogether.Patches
         private static TMPro.TextMeshProUGUI infoText;
 
         /// <summary>
-        /// Unpause timeStep (To prevent pause) and grant 8 seconds of invulnerability
+        /// Unpause timeStep (To prevent pause) and grant 3 seconds of invulnerability
         /// from the moment the screen pops up on non shared experience only.
         /// Unless interacting with a shady guy.
         /// </summary>
@@ -69,7 +69,7 @@ namespace MegabonkTogether.Patches
         }
 
         /// <summary>
-        /// The invulnerability timer runs its fixed 8 seconds from popup even if the
+        /// The invulnerability timer runs its fixed 3 seconds from popup even if the
         /// screen is closed early, so there is nothing to do here besides shady guy cleanup.
         /// </summary>
         [HarmonyPostfix]

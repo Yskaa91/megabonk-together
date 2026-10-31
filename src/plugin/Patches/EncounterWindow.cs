@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.UI.InGame.Levelup;
+using Assets.Scripts.UI.InGame.Levelup;
 using Assets.Scripts.UI.InGame.Rewards;
 using Assets.Scripts.Utility;
 using Coffee.UIExtensions;
@@ -73,7 +73,7 @@ namespace MegabonkTogether.Patches
         }
 
         /// <summary>
-        /// Prevent pause on netplay reward pop (Shady guy and other) and grant 8 seconds
+        /// Prevent pause on netplay reward pop (Shady guy and other) and grant 3 seconds
         /// of invulnerability from the moment the reward pops up.
         /// </summary>
         [HarmonyPostfix]

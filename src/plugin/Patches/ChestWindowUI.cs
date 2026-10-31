@@ -1,4 +1,4 @@
-﻿using Assets.Scripts.Utility;
+using Assets.Scripts.Utility;
 using HarmonyLib;
 using MegabonkTogether.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,7 +58,7 @@ namespace MegabonkTogether.Patches
         }
 
         /// <summary>
-        /// Didn't find a proper way to hide the open button ¯\_(ツ)_/¯
+        /// Didn't find a proper way to hide the open button �\_(?)_/�
         /// Also let the original method run if shared experience is enabled
         /// </summary>
         [HarmonyPostfix]
@@ -94,7 +94,7 @@ namespace MegabonkTogether.Patches
         }
 
         /// <summary>
-        /// Grant 8 seconds of invulnerability from the moment the chest reward pops up.
+        /// Grant 3 seconds of invulnerability from the moment the chest reward pops up.
         /// </summary>
         /// <param name="__instance"></param>
         [HarmonyPostfix]
@@ -129,7 +129,7 @@ namespace MegabonkTogether.Patches
         }
 
         /// <summary>
-        /// The invulnerability timer runs its fixed 8 seconds from popup even if the
+        /// The invulnerability timer runs its fixed 3 seconds from popup even if the
         /// chest window is closed early, so only the open button is restored here.
         /// </summary>
         [HarmonyPostfix]
