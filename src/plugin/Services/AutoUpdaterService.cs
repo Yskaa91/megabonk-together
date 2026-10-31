@@ -48,6 +48,12 @@ namespace MegabonkTogether.Common
         public bool IsCustomBuild();
         public string GetCurrentVersion();
         public Task EnsureChangelogExists(string version, string pluginDirectory);
+
+        /// <summary>
+        /// Mark the downloaded update as approved by the user. Without this the updater
+        /// is not launched on exit, so closing the update dialog cancels the install.
+        /// </summary>
+        public void ApproveUpdate();
     }
 
     public class AutoUpdaterService : IAutoUpdaterService
@@ -55,13 +61,14 @@ namespace MegabonkTogether.Common
         private const string UPDATE_FILE_PREFIX = ".update_download_";
         private static readonly TimeSpan UPDATE_CHECK_COOLDOWN = TimeSpan.FromMinutes(5);
 
-        private const string GITHUB_OWNER = "Fcornaire";
+        private const string GITHUB_OWNER = "Yskaa91";
         private const string GITHUB_REPO = "megabonk-together";
         private string currentVersion;
         private string pluginPath;
         private ManualLogSource logger;
 
         private bool isUpdateAvailable = false;
+        private bool userApprovedUpdate = false;
         private string downloadedVersion = "";
         private string latestVersion = "";
         private DateTime lastUpdateCheck = DateTime.MinValue;
@@ -102,6 +109,11 @@ namespace MegabonkTogether.Common
         public bool IsAnUpdateAvailable()
         {
             return isUpdateAvailable;
+        }
+
+        public void ApproveUpdate()
+        {
+            userApprovedUpdate = true;
         }
 
         public bool IsCustomBuild()
@@ -505,6 +517,12 @@ namespace MegabonkTogether.Common
             if (isCustomBuild)
             {
                 logger.LogInfo($"{buildType} build - updater launch is disabled");
+                return;
+            }
+
+            if (!userApprovedUpdate)
+            {
+                logger.LogInfo("Update downloaded but not approved by the user - skipping install");
                 return;
             }
 

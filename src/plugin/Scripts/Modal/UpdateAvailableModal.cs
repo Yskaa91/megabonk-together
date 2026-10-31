@@ -170,6 +170,7 @@ namespace MegabonkTogether.Scripts.Modal
                 return;
             }
 
+            autoUpdaterService.ApproveUpdate();
             Application.Quit();
         }
     }

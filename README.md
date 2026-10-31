@@ -43,6 +43,11 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.2
+
+- 🔄 **Auto-updater points at this repository**: the plugin now checks the latest release here, downloads it, and offers to install it
+- ✅ **Install only after you confirm**: closing the update dialog no longer installs the update on exit
+
 ### v5.3.1
 
 - 🚪 **Fixed portal disconnect**: a client loading the next stage no longer times out. The transport keeps polling during the load and the disconnect timeout is 60 seconds
