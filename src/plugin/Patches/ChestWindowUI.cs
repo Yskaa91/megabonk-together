@@ -77,15 +77,18 @@ namespace MegabonkTogether.Patches
                 __instance.b_banish.gameObject.SetActive(false);
             }
 
+            // Capture the open button before any early return: OnClose_Postfix restores
+            // it, and restoring a null reference breaks the next ChestWindowUi.Open.
+            if (openButton == null)
+            {
+                openButton = __instance.b_open;
+            }
+
             if (synchronizationService.IsSharedExperienceEnabled())
             {
                 return;
             }
 
-            if (openButton == null)
-            {
-                openButton = __instance.b_open;
-            }
             __instance.OpenButton();
             __instance.b_open = null;
         }
@@ -138,7 +141,10 @@ namespace MegabonkTogether.Patches
                 return;
             }
 
-            __instance.b_open = openButton;
+            if (openButton != null)
+            {
+                __instance.b_open = openButton;
+            }
         }
     }
 }

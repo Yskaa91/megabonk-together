@@ -6,6 +6,11 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.8"]
+changes = [
+    "Fixed the game getting stuck on the second chest in shared experience: the chest open button reference was cleared after the first chest, so the next chest window threw an exception and never opened",
+]
+
 [version."5.3.7"]
 changes = [
     "Banish is now disabled on the level-up screen too, not only on the chest window. The banish button is hidden and the banish action is blocked during a netplay session",

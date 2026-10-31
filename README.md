@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.8
+
+- 🎁 **Fixed the second chest freezing the game in shared experience**: the chest open button reference was cleared after the first chest, so the next chest window threw an exception and never opened
+
 ### v5.3.7
 
 - 🚫 **Banish disabled on the level-up screen too**: the button is hidden and the banish action is blocked in netplay, not only on the chest window
