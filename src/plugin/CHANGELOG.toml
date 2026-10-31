@@ -6,6 +6,11 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.5"]
+changes = [
+    "Shrines, microwave, paid chests and the shady guy no longer pause the game and show 'Waiting for other player(s) choices' when you are dead or cannot participate. The game keeps running and only the players who can participate get the reward",
+]
+
 [version."5.3.4"]
 changes = [
     "Update checking is now enabled once for everyone, including configs that had it disabled. You can disable it again afterwards",

@@ -2533,17 +2533,7 @@ namespace MegabonkTogether.Services
 
             if (interactableObj == null)
             {
-                if (IsSharedExperienceEnabled())
-                {
-                    MyTime.Pause();
-                    ScreenTextHelper.Show("Waiting for other player(s) choices...", new Vector2(0, -350));
-                    RewardFinished();
-                }
-                else
-                {
-                    logger.LogWarning("Interactable object not found in SpawnedObjectManagerService when processing OnReceivedInteractableUsed.");
-                }
-
+                logger.LogWarning("Interactable object not found in SpawnedObjectManagerService when processing OnReceivedInteractableUsed.");
                 return;
             }
 
@@ -2571,9 +2561,6 @@ namespace MegabonkTogether.Services
                         if (microwave.hasItem && !used.IsMicrowaveAndHaveItem)
                         {
                             microwave.Interact();
-                            MyTime.Pause();
-                            RewardFinished();
-                            ScreenTextHelper.Show("Waiting for other player(s) choices in Microwave...", new Vector2(0, -350));
                             break;
                         }
 
@@ -2581,9 +2568,7 @@ namespace MegabonkTogether.Services
 
                         if (!microwave.hasItem && (GameManager.Instance.player.IsDead() || !microwave.CanInteract() || uniqueItemsInRarity < 2))
                         {
-                            MyTime.Pause();
-                            RewardFinished();
-                            ScreenTextHelper.Show("Waiting for other player(s) choices in Microwave...", new Vector2(0, -350));
+                            break;
                         }
                         else
                         {
@@ -2595,13 +2580,7 @@ namespace MegabonkTogether.Services
                     var shrineBalance = interactableObj.GetComponentInChildren<InteractableShrineBalance>();
                     if (shrineBalance != null)
                     {
-                        if (GameManager.Instance.player.IsDead())
-                        {
-                            MyTime.Pause();
-                            RewardFinished();
-                            ScreenTextHelper.Show("Waiting for other player(s) choices in Balance Shrine...", new Vector2(0, -350));
-                        }
-                        else
+                        if (!GameManager.Instance.player.IsDead())
                         {
                             shrineBalance.Interact();
                         }
@@ -2611,13 +2590,7 @@ namespace MegabonkTogether.Services
                     var moai = interactableObj.GetComponentInChildren<InteractableShrineMoai>();
                     if (moai != null)
                     {
-                        if (GameManager.Instance.player.IsDead())
-                        {
-                            MyTime.Pause();
-                            RewardFinished();
-                            ScreenTextHelper.Show("Waiting for other player(s) choices in Moai Shrine...", new Vector2(0, -350));
-                        }
-                        else
+                        if (!GameManager.Instance.player.IsDead())
                         {
                             moai.Interact();
                         }
@@ -2627,13 +2600,7 @@ namespace MegabonkTogether.Services
                     var chest = interactableObj.GetComponent<InteractableChest>();
                     if (chest != null)
                     {
-                        if (GameManager.Instance.player.IsDead() || !chest.CanAfford())
-                        {
-                            MyTime.Pause();
-                            RewardFinished();
-                            ScreenTextHelper.Show("Waiting for other player(s) choices in Chest...", new Vector2(0, -350));
-                        }
-                        else
+                        if (!GameManager.Instance.player.IsDead() && chest.CanAfford())
                         {
                             chest.Interact();
                         }
@@ -2643,13 +2610,7 @@ namespace MegabonkTogether.Services
                     var shadyGuy = interactableObj.GetComponentInChildren<InteractableShadyGuy>();
                     if (shadyGuy != null)
                     {
-                        if (GameManager.Instance.player.IsDead())
-                        {
-                            MyTime.Pause();
-                            RewardFinished();
-                            ScreenTextHelper.Show("Waiting for other player(s) choices with Shady Guy...", new Vector2(0, -350));
-                        }
-                        else
+                        if (!GameManager.Instance.player.IsDead())
                         {
                             shadyGuy.Interact();
                         }

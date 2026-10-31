@@ -43,6 +43,10 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.5
+
+- ⏱️ **No more "Waiting for other player(s) choices" at shrines, microwave, paid chests and the shady guy**: dead or broke players no longer pause the game, they simply skip that reward
+
 ### v5.3.4
 
 - 🔄 **Update checking enabled for everyone**: existing configs that had it disabled are switched on once. You can disable it again afterwards
