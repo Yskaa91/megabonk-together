@@ -116,7 +116,24 @@ namespace MegabonkTogether.Services
                 _ => 1.0f
             };
 
-            return baseMultiplier * stageMultiplier;
+            float multiplier = baseMultiplier * stageMultiplier;
+
+            // In shared experience every chest opened by one player pops a reward for
+            // every player, so one map chest yields one chest per player. Divide the map
+            // total by the player count to keep the per-player count equal to the
+            // non-shared mode.
+            if (IsSharedExperienceEnabled() && PlayersCount > 1)
+            {
+                multiplier /= PlayersCount;
+            }
+
+            return multiplier;
+        }
+
+        private static bool IsSharedExperienceEnabled()
+        {
+            var sharedExperience = Plugin.Instance.Mode.EnabledSharedExperience;
+            return sharedExperience.HasValue && sharedExperience.Value;
         }
 
         public int GetPickupXpValue()
