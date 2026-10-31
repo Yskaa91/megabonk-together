@@ -6,6 +6,12 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.3"]
+changes = [
+    "Shared experience no longer pauses the game and waits for every player to close a reward window. Level-up and chest rewards now unpause and grant the same 8 seconds of invulnerability as the non-shared mode",
+    "The chest banish button is disabled in netplay, because it mutates the shared loot pool and could leave other players' chest window stuck",
+]
+
 [version."5.3.2"]
 changes = [
     "The in-game auto-updater now checks the releases of this repository, so new versions are detected and downloaded automatically",

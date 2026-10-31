@@ -43,6 +43,11 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.3
+
+- ⏱️ **Shared experience no longer waits for other players**: reward windows close for each player immediately and grant 8 seconds of invulnerability, same as the non-shared mode
+- 🚫 **Banish disabled in netplay**: it changed the shared loot pool and could leave other players' chest window stuck
+
 ### v5.3.2
 
 - 🔄 **Auto-updater points at this repository**: the plugin now checks the latest release here, downloads it, and offers to install it
