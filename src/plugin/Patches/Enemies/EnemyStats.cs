@@ -3,6 +3,7 @@ using Assets.Scripts.Inventory.Stats;
 using HarmonyLib;
 using MegabonkTogether.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace MegabonkTogether.Patches.Enemies
 {
@@ -11,6 +12,7 @@ namespace MegabonkTogether.Patches.Enemies
     {
         private static readonly IGameBalanceService gameBalanceService = Plugin.Services.GetService<IGameBalanceService>();
         private static readonly ISynchronizationService synchronizationService = Plugin.Services.GetService<ISynchronizationService>();
+        private static readonly IPlayerManagerService playerManagerService = Plugin.Services.GetService<IPlayerManagerService>();
 
         /// <summary>
         /// Adjust enemy HP based on netplay configuration
@@ -32,6 +34,26 @@ namespace MegabonkTogether.Patches.Enemies
 
             var multiplier = gameBalanceService.GetEnemyHpMultiplier(enemy.enemyFlag);
             __result *= multiplier;
+        }
+
+        /// <summary>
+        /// Elite spawn chance is per enemy, and the host spawns more enemies with more
+        /// players. Divide the chance so the total number of elites stays comparable.
+        /// </summary>
+        [HarmonyPostfix]
+        [HarmonyPatch(nameof(EnemyStats.GetEliteChance))]
+        private static void GetEliteChancePostfix(ref float __result)
+        {
+            if (!synchronizationService.HasNetplaySessionStarted())
+            {
+                return;
+            }
+
+            var players = playerManagerService.GetAllPlayers().Count();
+            if (players > 1)
+            {
+                __result /= players;
+            }
         }
     }
 }

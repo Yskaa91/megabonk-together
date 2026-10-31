@@ -6,6 +6,14 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.10"]
+changes = [
+    "Shared experience gold gain is divided by the player count, so the shared pool grows at the solo rate. Chest prices keep their normal progression",
+    "Elite spawn chance is divided by the player count, since the host spawns more enemies with more players",
+    "The Key item free chest chance is divided by the player count",
+    "Elite and boss HP now scales with the full player count (5 players = 5x). Regular enemy HP keeps the +10% per extra player scaling",
+]
+
 [version."5.3.9"]
 changes = [
     "Shared experience: the number of chests placed per stage is now divided by the player count too, not only the free chest chance. Previously every player still received the full solo chest count",

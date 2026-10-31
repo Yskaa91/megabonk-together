@@ -43,6 +43,13 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.10
+
+- 💰 **Gold gain normalized**: in shared experience the shared gold pool is divided by the player count, so income matches a solo run. Chest prices keep their normal progression
+- 👑 **Elite spawn normalized**: elite chance is divided by the player count, since more players means more enemies
+- 🗝️ **Key item normalized**: the free chest chance from the Key item is divided by the player count
+- 💀 **Elite and boss HP**: now scales with the full player count (5 players = 5x). Regular enemies keep the +10% per extra player scaling
+
 ### v5.3.9
 
 - 🎁 **Shared experience chest count now scales with players**: the chests placed per stage are divided by the player count, not only the free chest chance

@@ -83,7 +83,20 @@ namespace MegabonkTogether.Services
                 _ => 1f
             };
 
-            float playerScaling = 1f + (PlayersCount - 1) * hpScalingPerAdditionalPlayer;
+            // Elite and boss enemies are rare, so the enemy count scaling does not make
+            // up for the extra players. Scale their HP with the full player count
+            // (5 players = 5x) instead of the +10% per extra player used for regular
+            // enemies, whose count already scales with the player count.
+            var isEliteOrBoss = enemyFlag is EEnemyFlag.Boss
+                or EEnemyFlag.Elite
+                or EEnemyFlag.FinalBoss
+                or EEnemyFlag.SummonerMiniboss
+                or EEnemyFlag.AnyBoss
+                or EEnemyFlag.Challenge;
+
+            float playerScaling = isEliteOrBoss
+                ? PlayersCount
+                : 1f + (PlayersCount - 1) * hpScalingPerAdditionalPlayer;
 
             float stageMultiplier = StageIndex switch
             {
