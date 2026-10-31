@@ -12,7 +12,7 @@ namespace MegabonkTogether.Scripts
 {
     public class NetworkHandler : MonoBehaviour
     {
-        private const float LOBBY_UPDATE_TICK_RATE = 60f;
+        private const float LOBBY_UPDATE_TICK_RATE = 30f;
         private const float lobbyUpdatetickInterval = 1f / LOBBY_UPDATE_TICK_RATE;
         private float lobbyUpdateAccumulator = 0f;
 
@@ -27,6 +27,9 @@ namespace MegabonkTogether.Scripts
         private const float TUMBLEWEED_UPDATE_TICK_RATE = 20f;
         private const float tumbleWeedUpdatetickInterval = 1f / TUMBLEWEED_UPDATE_TICK_RATE;
         private float tumbleWeedUpdateAccumulator = 0f;
+
+        private const float DIAGNOSTICS_INTERVAL = 5f;
+        private float diagnosticsAccumulator = 0f;
 
         private bool hasStarted = false;
         private bool? hasFoundMatch = null;
@@ -84,6 +87,20 @@ namespace MegabonkTogether.Scripts
                 udpClientService.Poll();
 
                 if (GameManager.Instance == null || GameManager.Instance.player == null || GameManager.Instance.player.inventory == null) return;
+
+                diagnosticsAccumulator += Time.deltaTime;
+                if (isGameStarted && diagnosticsAccumulator >= DIAGNOSTICS_INTERVAL)
+                {
+                    diagnosticsAccumulator = 0f;
+                    if (ModConfig.LogNetworkDiagnostics.Value)
+                    {
+                        Plugin.Log.LogInfo($"[netdiag] {udpClientService.GetNetworkDiagnostics()}");
+                    }
+                    else
+                    {
+                        Plugin.Log.LogDebug($"[netdiag] {udpClientService.GetNetworkDiagnostics()}");
+                    }
+                }
 
                 lobbyUpdateAccumulator += Time.deltaTime;
 

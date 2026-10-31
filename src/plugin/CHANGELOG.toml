@@ -6,6 +6,14 @@
 #     "Change 2 description",
 # ]
 
+[version."5.3.0"]
+changes = [
+    "Fixed client desyncs with 3+ players: high-frequency state and combat updates no longer flood the reliable channel, so chests, damage, weapons and interactions stay in sync",
+    "Fixed clients silently stopping all outgoing actions after an exception (message-suppression flags are now always restored)",
+    "Fixed damage being echoed back to the host and applied twice on other clients",
+    "Added optional network diagnostics (LogNetworkDiagnostics) and reduced the player update rate to 30 Hz",
+]
+
 [version."5.2.1"]
 changes = [
     "Reward invulnerability reduced to 5 seconds and reworked to use the native player invincibility flag, so interacting with objects and chests (E button) now works while invulnerable"

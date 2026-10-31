@@ -210,6 +210,17 @@ namespace MegabonkTogether.Patches.Enemies
             }
 
             var isServer = synchronizationService.IsServerMode() ?? false;
+
+            // Never re-broadcast damage that we are currently applying because it was
+            // received from the network (OnReceivedEnemyDamaged sets this flag). Without
+            // this guard every client echoes the host's damage back to the host, which
+            // re-applies it and broadcasts again, amplifying damage and flooding the
+            // reliable channel.
+            if (!isServer && Plugin.Instance.CAN_DAMAGE_ENEMIES)
+            {
+                return;
+            }
+
             if (isServer || AllowedDamageSource.Contains(damageContainer.damageSource))
             {
                 synchronizationService.OnEnemyDamaged(__instance, damageContainer);

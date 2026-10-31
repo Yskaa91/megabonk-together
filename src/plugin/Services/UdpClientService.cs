@@ -51,7 +51,7 @@ namespace MegabonkTogether.Services
 
         public void SendToHost<T>(T data, DeliveryMethod? deliveryMethod = null) where T : IGameNetworkMessage;
         public void SendToClient<T>(NetPeer client, T data, uint netPlayerId) where T : IGameNetworkMessage;
-        public void SendToAllClientsExcept<T>(int netPlayerId, uint sender, T data) where T : IGameNetworkMessage;
+        public void SendToAllClientsExcept<T>(int netPlayerId, uint sender, T data, DeliveryMethod deliveryMethod = DeliveryMethod.ReliableOrdered) where T : IGameNetworkMessage;
         public bool? IsHost();
         public void UpdateEnemies();
         public void UpdateProjectiles();
@@ -70,6 +70,12 @@ namespace MegabonkTogether.Services
         public bool HasHandledHost();
         public void ResetHandledHost();
         public void RemovePeer(uint clientConnectionId);
+
+        /// <summary>
+        /// Human readable snapshot of the transport state (role, peers, reliable queue
+        /// depth, bytes sent). Intended for Debug-level logging while validating a fix.
+        /// </summary>
+        public string GetNetworkDiagnostics();
     }
     internal class UdpClientService(
             IPlayerManagerService playerManagerService,
@@ -80,7 +86,9 @@ namespace MegabonkTogether.Services
             IEncounterService encounterService,
             ManualLogSource logger) : IUdpClientService
     {
-        private const int MAX_PACKET_SIZE_BYTES = 1000;
+        // LiteNetLib starts with a 1024-byte MTU and an unreliable packet cannot be
+        // fragmented. Keep a safety margin for the relay envelope/headers.
+        private const int MAX_PACKET_SIZE_BYTES = 900;
         private const int STARTING_GAME_UDP_PORT = 27015;
         private int GAME_UDP_PORT = STARTING_GAME_UDP_PORT;
         private NetManager netManager;
@@ -204,7 +212,7 @@ namespace MegabonkTogether.Services
 
             listener.PeerConnectedEvent += peer =>
             {
-                if (peer.Address.ToString() != DnsHelper.ResolveDomainToIp(this.rdvServerHost))
+                if (!DnsHelper.IsAddressOf(this.rdvServerHost, peer.Address))
                 {
                     gamePeers.TryAdd(peer.Id, peer);
                 }
@@ -352,6 +360,29 @@ namespace MegabonkTogether.Services
         public int GetNetPeerCount()
         {
             return gamePeers.Count;
+        }
+
+        public string GetNetworkDiagnostics()
+        {
+            var builder = new System.Text.StringBuilder();
+            builder.Append(isHost == true ? "role=HOST" : "role=CLIENT");
+            builder.Append($", directPeers={gamePeers.Count}, relayPeers={gamePeersIntroducedByRelay.Count}, relayConnected={relayPeer != null}");
+
+            foreach (var (_, peer) in gamePeers)
+            {
+                if (peer == null)
+                {
+                    continue;
+                }
+
+                builder.Append($" | peer{peer.Id}: ping={peer.Ping}ms" +
+                    $", reliableOrderedQueue={peer.GetPacketsCountInReliableQueue(0, true)}" +
+                    $", reliableUnorderedQueue={peer.GetPacketsCountInReliableQueue(0, false)}" +
+                    $", sent={peer.Statistics.BytesSent}B/{peer.Statistics.PacketsSent}pkt" +
+                    $", recv={peer.Statistics.BytesReceived}B/{peer.Statistics.PacketsReceived}pkt");
+            }
+
+            return builder.ToString();
         }
 
         private void HandleDisconnectedPeer(NetPeer peer)
@@ -860,35 +891,35 @@ namespace MegabonkTogether.Services
                         break;
                     case AbstractSpawnedProjectile spawnedProjectile:
                         EventManager.OnSpawnedProjectile(spawnedProjectile);
-                        SendToAllClientsExcept(netPeerId, spawnedProjectile.OwnerId, spawnedProjectile);
+                        SendToAllClientsExcept(netPeerId, spawnedProjectile.OwnerId, spawnedProjectile, DeliveryMethod.ReliableUnordered);
                         break;
                     case ProjectileDone projectileDone:
                         EventManager.OnProjectileDone(projectileDone);
-                        SendToAllClientsExcept(netPeerId, projectileDone.SenderConnectionId, projectileDone);
+                        SendToAllClientsExcept(netPeerId, projectileDone.SenderConnectionId, projectileDone, DeliveryMethod.ReliableUnordered);
                         break;
                     case EnemyDied enemyDied:
                         EventManager.OnEnemyDied(enemyDied);
-                        SendToAllClientsExcept(netPeerId, enemyDied.DiedByOwnerId, enemyDied);
+                        SendToAllClientsExcept(netPeerId, enemyDied.DiedByOwnerId, enemyDied, DeliveryMethod.ReliableOrdered);
                         break;
                     case PickupApplied pickupApplied:
                         EventManager.OnPickupApplied(pickupApplied);
-                        SendToAllClientsExcept(netPeerId, pickupApplied.OwnerId, pickupApplied);
+                        SendToAllClientsExcept(netPeerId, pickupApplied.OwnerId, pickupApplied, DeliveryMethod.ReliableUnordered);
                         break;
                     case PickupFollowingPlayer pickupFollowingPlayer:
                         EventManager.OnPickupFollowingPlayer(pickupFollowingPlayer);
-                        SendToAllClientsExcept(netPeerId, pickupFollowingPlayer.PlayerId, pickupFollowingPlayer);
+                        SendToAllClientsExcept(netPeerId, pickupFollowingPlayer.PlayerId, pickupFollowingPlayer, DeliveryMethod.ReliableUnordered);
                         break;
                     case ChestOpened chestOpened:
                         EventManager.OnChestOpened(chestOpened);
-                        SendToAllClientsExcept(netPeerId, chestOpened.OwnerId, chestOpened);
+                        SendToAllClientsExcept(netPeerId, chestOpened.OwnerId, chestOpened, DeliveryMethod.ReliableOrdered);
                         break;
                     case WeaponAdded weaponAdded:
                         EventManager.OnWeaponAdded(weaponAdded);
-                        SendToAllClientsExcept(netPeerId, weaponAdded.OwnerId, weaponAdded);
+                        SendToAllClientsExcept(netPeerId, weaponAdded.OwnerId, weaponAdded, DeliveryMethod.ReliableOrdered);
                         break;
                     case InteractableUsed interactableUsed:
                         EventManager.OnInteractableUsed(interactableUsed);
-                        SendToAllClientsExcept(netPeerId, interactableUsed.OwnerId, interactableUsed);
+                        SendToAllClientsExcept(netPeerId, interactableUsed.OwnerId, interactableUsed, DeliveryMethod.ReliableOrdered);
                         break;
                     case StartingChargingShrine startingChargingShrine:
                         EventManager.OnStartingChargingShrine(startingChargingShrine);
@@ -898,11 +929,14 @@ namespace MegabonkTogether.Services
                         break;
                     case EnemyExploder enemyExploder:
                         EventManager.OnEnemyExploder(enemyExploder);
-                        SendToAllClientsExcept(netPeerId, enemyExploder.SenderId, enemyExploder);
+                        SendToAllClientsExcept(netPeerId, enemyExploder.SenderId, enemyExploder, DeliveryMethod.ReliableOrdered);
                         break;
                     case EnemyDamaged enemyDamaged:
+                        // The host applies the damage locally (OnReceivedEnemyDamaged) and its
+                        // Damage postfix broadcasts the resulting state to every client. Relaying
+                        // here as well would apply the damage twice on the other clients and flood
+                        // the reliable channel with high-frequency combat events.
                         EventManager.OnEnemyDamaged(enemyDamaged);
-                        SendToAllClientsExcept(netPeerId, enemyDamaged.AttackerId, enemyDamaged);
                         break;
                     //case SpawnedEnemySpecialAttack spawnedEnemySpecialAttack:
                     //    EventManager.OnSpawnedEnemySpecialAttack(spawnedEnemySpecialAttack);
@@ -982,7 +1016,7 @@ namespace MegabonkTogether.Services
                         break;
                     case AddXp addXp:
                         EventManager.OnAddXp(addXp);
-                        SendToAllClientsExcept(netPeerId, addXp.OwnerId, addXp);
+                        SendToAllClientsExcept(netPeerId, addXp.OwnerId, addXp, DeliveryMethod.ReliableUnordered);
                         break;
                     case EncounterClosed encounterClosed:
                         encounterService.AddClosedEncounterForPlayer(encounterClosed.OwnerId);
@@ -1000,7 +1034,7 @@ namespace MegabonkTogether.Services
                         break;
                     case GoldChanged goldChanged:
                         EventManager.OnGoldChanged(goldChanged);
-                        SendToAllClientsExcept(netPeerId, goldChanged.OwnerId, goldChanged);
+                        SendToAllClientsExcept(netPeerId, goldChanged.OwnerId, goldChanged, DeliveryMethod.ReliableUnordered);
                         break;
                     default:
                         Plugin.Log.LogWarning($"Unknown message type received {message}");
@@ -1382,105 +1416,87 @@ namespace MegabonkTogether.Services
             playerManagerService.UpdatePlayer(player);
         }
 
-        private void SendLobbyUpdate()
+        /// <summary>
+        /// High-frequency state updates must never be sent reliably: a single lost tick is
+        /// irrelevant because the next tick supersedes it, while reliable retransmissions
+        /// would clog the reliable-ordered channel used by critical actions (chest opened,
+        /// damage, interactions, ...). Large snapshots are therefore split into several
+        /// unreliable packets that fit in a single MTU.
+        /// </summary>
+        private void SendStateInBatches<T>(IReadOnlyList<T> items, Func<List<T>, IGameNetworkMessage> buildMessage)
         {
-            var players = playerManagerService.GetAllPlayers();
-
-            var message = new LobbyUpdates
+            if (items.Count == 0)
             {
-                Players = players,
-            };
-
-            byte[] serialized = MemoryPackSerializer.Serialize<IGameNetworkMessage>(message);
-
-            var deliveryMethod = DeliveryMethod.Unreliable;
-
-            if (serialized.Length >= MAX_PACKET_SIZE_BYTES)
-            {
-                deliveryMethod = DeliveryMethod.ReliableOrdered;
+                return;
             }
 
-            SendToAllClients(serialized, deliveryMethod);
+            // Depth-first splitting keeps the original ordering of the items.
+            var pending = new Stack<List<T>>();
+            pending.Push(items.ToList());
+
+            while (pending.Count > 0)
+            {
+                var batch = pending.Pop();
+                var message = buildMessage(batch);
+                var serialized = MemoryPackSerializer.Serialize<IGameNetworkMessage>(message);
+
+                if (serialized.Length < MAX_PACKET_SIZE_BYTES || batch.Count <= 1)
+                {
+                    SendToAllClients(serialized, DeliveryMethod.Unreliable);
+                    continue;
+                }
+
+                var middle = batch.Count / 2;
+                // Push the second half first so the first half is sent first.
+                pending.Push(batch.GetRange(middle, batch.Count - middle));
+                pending.Push(batch.GetRange(0, middle));
+            }
+        }
+
+        private void SendLobbyUpdate()
+        {
+            var players = playerManagerService.GetAllPlayers().ToList();
+
+            SendStateInBatches(players, batch => new LobbyUpdates
+            {
+                Players = batch,
+            });
         }
 
         private void SendEnemiesUpdate()
         {
-            var enemies = enemyManagerService.GetAllEnemiesDeltaAndUpdate();
-            var bossFinalOrb = finalBossOrbManagerService.GetAllOrbs();
+            var enemies = enemyManagerService.GetAllEnemiesDeltaAndUpdate().ToList();
+            var bossFinalOrb = finalBossOrbManagerService.GetAllOrbs().ToList();
 
-            if (!enemies.Any() && !bossFinalOrb.Any())
+            SendStateInBatches(enemies, batch => new LobbyUpdates
             {
-                return;
-            }
+                Enemies = batch,
+            });
 
-            var message = new LobbyUpdates
+            SendStateInBatches(bossFinalOrb, batch => new LobbyUpdates
             {
-                Enemies = enemies,
-                BossOrbs = bossFinalOrb,
-            };
-
-            byte[] serialized = MemoryPackSerializer.Serialize<IGameNetworkMessage>(message);
-
-            var deliveryMethod = DeliveryMethod.Unreliable;
-
-            if (serialized.Length >= MAX_PACKET_SIZE_BYTES)
-            {
-                deliveryMethod = DeliveryMethod.ReliableOrdered;
-            }
-
-            SendToAllClients(serialized, deliveryMethod);
+                BossOrbs = batch,
+            });
         }
 
         private void SendProjectilesUpdate()
         {
-            var projectiles = projectileManagerService.GetAllProjectilesDeltaAndUpdate();
+            var projectiles = projectileManagerService.GetAllProjectilesDeltaAndUpdate().ToList();
 
-            if (!projectiles.Any())
+            SendStateInBatches(projectiles, batch => new ProjectilesUpdate
             {
-                return;
-            }
-
-            var message = new ProjectilesUpdate
-            {
-                Projectiles = [.. projectiles],
-            };
-
-            byte[] serialized = MemoryPackSerializer.Serialize<IGameNetworkMessage>(message);
-
-            var deliveryMethod = DeliveryMethod.Unreliable;
-
-            if (serialized.Length >= MAX_PACKET_SIZE_BYTES)
-            {
-                deliveryMethod = DeliveryMethod.ReliableOrdered;
-            }
-
-            SendToAllClients(serialized, deliveryMethod);
+                Projectiles = batch,
+            });
         }
 
         private void SendTumbleWeedsUpdate()
         {
-            var tumbleWeeds = spawnedObjectManagerService.GetAllTumbleWeedsDeltaAndUpdate();
+            var tumbleWeeds = spawnedObjectManagerService.GetAllTumbleWeedsDeltaAndUpdate().ToList();
 
-            if (!tumbleWeeds.Any())
+            SendStateInBatches(tumbleWeeds, batch => new TumbleWeedsUpdate
             {
-                return;
-            }
-
-            var message = new TumbleWeedsUpdate
-            {
-                TumbleWeeds = [.. tumbleWeeds],
-            };
-
-            byte[] serialized = MemoryPackSerializer.Serialize<IGameNetworkMessage>(message);
-
-            var deliveryMethod = DeliveryMethod.Unreliable;
-
-            if (serialized.Length >= MAX_PACKET_SIZE_BYTES)
-            {
-                deliveryMethod = DeliveryMethod.ReliableOrdered;
-            }
-
-            SendToAllClients(serialized, deliveryMethod);
+                TumbleWeeds = batch.ToArray(),
+            });
         }
 
         public void SendToAllClients<T>(T data, DeliveryMethod deliveryMethod) where T : IGameNetworkMessage
@@ -1516,7 +1532,14 @@ namespace MegabonkTogether.Services
 
             foreach (var (_, peer) in gamePeers)
             {
-                peer.Send(writer, deliveryMethod);
+                try
+                {
+                    peer.Send(writer, deliveryMethod);
+                }
+                catch (TooBigPacketException ex)
+                {
+                    Plugin.Log.LogError($"Failed to send message to peer {peer.Id}: {ex.Message}");
+                }
             }
         }
 
@@ -1545,7 +1568,10 @@ namespace MegabonkTogether.Services
                 var relayMsgBytes = MemoryPackSerializer.Serialize(relayEnvelope);
                 lock (relayPeerLock)
                 {
-                    relayPeer?.Send(relayMsgBytes, DeliveryMethod.ReliableOrdered);
+                    // Preserve the requested delivery method: relaying every client update
+                    // (including 60 Hz player updates) as ReliableOrdered was saturating the
+                    // reliable channel and delaying/losing critical actions.
+                    relayPeer?.Send(relayMsgBytes, deliveryMethod);
                 }
                 return;
             }
@@ -1666,7 +1692,7 @@ namespace MegabonkTogether.Services
             return -1;
         }
 
-        public void SendToAllClientsExcept<T>(int netPlayerId, uint sender, T data) where T : IGameNetworkMessage
+        public void SendToAllClientsExcept<T>(int netPlayerId, uint sender, T data, DeliveryMethod deliveryMethod = DeliveryMethod.ReliableOrdered) where T : IGameNetworkMessage
         {
             if (!EnsureIsHost())
             {
@@ -1706,7 +1732,7 @@ namespace MegabonkTogether.Services
                 var relayMsgBytes = MemoryPackSerializer.Serialize(relayEnvelope);
                 lock (relayPeerLock)
                 {
-                    relayPeer?.Send(relayMsgBytes, DeliveryMethod.ReliableOrdered);
+                    relayPeer?.Send(relayMsgBytes, deliveryMethod);
                 }
             }
 
@@ -1722,7 +1748,14 @@ namespace MegabonkTogether.Services
             var filteredPeers = gamePeers.Where(p => p.Value.Id != netPlayerId);
             foreach (var (_, peer) in filteredPeers)
             {
-                peer.Send(writer, DeliveryMethod.ReliableOrdered);
+                try
+                {
+                    peer.Send(writer, deliveryMethod);
+                }
+                catch (TooBigPacketException ex)
+                {
+                    Plugin.Log.LogError($"Failed to relay message to peer {peer.Id}: {ex.Message}");
+                }
             }
         }
 
@@ -1755,16 +1788,16 @@ namespace MegabonkTogether.Services
             NetDataWriter writer = new NetDataWriter();
             writer.Put(data);
 
-            try
+            foreach (var (_, peer) in gamePeers)
             {
-                foreach (var (_, peer) in gamePeers)
+                try
                 {
                     peer.Send(writer, deliveryMethod);
                 }
-            }
-            catch (LiteNetLib.TooBigPacketException ex)
-            {
-                Plugin.Log.LogError($"Failed to send message: {ex.Message}");
+                catch (TooBigPacketException ex)
+                {
+                    Plugin.Log.LogError($"Failed to send message to peer {peer.Id}: {ex.Message}");
+                }
             }
         }
 

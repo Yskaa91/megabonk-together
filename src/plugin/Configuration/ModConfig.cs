@@ -16,6 +16,7 @@ namespace MegabonkTogether.Configuration
         public static ConfigEntry<string> PreviousVersion { get; private set; }
         public static ConfigEntry<bool> AllowSavesDuringNetplay { get; private set; }
         public static ConfigEntry<bool> EnabledSharedExperience { get; private set; }
+        public static ConfigEntry<bool> LogNetworkDiagnostics { get; private set; }
 
         public static void Initialize(ConfigFile config)
         {
@@ -68,6 +69,12 @@ namespace MegabonkTogether.Configuration
                 "EnabledSharedExperience",
                 false,
                 "Enable Host experience (Same XP and pause enabled). Disable for no pause and separate XP."
+            );
+            LogNetworkDiagnostics = config.Bind(
+                "Network",
+                "LogNetworkDiagnostics",
+                false,
+                "Log transport diagnostics every 5 seconds (role, peers, reliable queue depth, bytes sent). Useful to diagnose desyncs."
             );
         }
 

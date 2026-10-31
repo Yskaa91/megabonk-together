@@ -1520,7 +1520,11 @@ namespace MegabonkTogether.Services
             }
             else
             {
-                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                // Damage events are high-frequency (AoE weapons hit many enemies per tick).
+                // Sending them reliably floods the reliable channel and delays critical
+                // interactions. The host is authoritative over enemy HP, so a dropped
+                // damage event is corrected by the next enemy snapshot.
+                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.Unreliable);
             }
         }
 
@@ -1548,11 +1552,16 @@ namespace MegabonkTogether.Services
             playerManagerService.AddGetNetplayerPositionRequest(damaged.AttackerId);
             trackerService.SetCurrentPlayerId(damaged.AttackerId);
 
-            enemy.Damage(damageContainer);
-
-            trackerService.UnsetCurrentPlayerId();
-            playerManagerService.UnqueueNetplayerPositionRequest();
-            Plugin.Instance.CAN_DAMAGE_ENEMIES = false;
+            try
+            {
+                enemy.Damage(damageContainer);
+            }
+            finally
+            {
+                trackerService.UnsetCurrentPlayerId();
+                playerManagerService.UnqueueNetplayerPositionRequest();
+                Plugin.Instance.CAN_DAMAGE_ENEMIES = false;
+            }
         }
 
 
@@ -1614,10 +1623,17 @@ namespace MegabonkTogether.Services
             Plugin.CAN_SEND_MESSAGES = false;
             trackerService.SetCurrentPlayerId(died.DiedByOwnerId);
 
-            enemy.EnemyDied(damageContainer);
-
-            trackerService.UnsetCurrentPlayerId();
-            Plugin.CAN_SEND_MESSAGES = true;
+            try
+            {
+                enemy.EnemyDied(damageContainer);
+            }
+            finally
+            {
+                // Always restore the flag: a throwing game method must not permanently
+                // disable every outgoing message of this client (no damage, no chests, ...).
+                trackerService.UnsetCurrentPlayerId();
+                Plugin.CAN_SEND_MESSAGES = true;
+            }
 
             var isHost = IsServerMode() ?? false;
             if (!isHost)
@@ -1679,11 +1695,11 @@ namespace MegabonkTogether.Services
             var isHost = IsServerMode() ?? false;
             if (isHost)
             {
-                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
             else
             {
-                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
         }
 
@@ -1718,7 +1734,7 @@ namespace MegabonkTogether.Services
                 Value = value
             };
 
-            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
         }
 
         private void OnReceivedSpawnedPickup(SpawnedPickup pickup)
@@ -1748,7 +1764,7 @@ namespace MegabonkTogether.Services
                 Position = pos.ToNumericsVector3(),
             };
 
-            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.Unreliable);
         }
 
         private void OnReceivedSpawnedOrbPickup(SpawnedPickupOrb pickup)
@@ -1782,11 +1798,11 @@ namespace MegabonkTogether.Services
             var isHost = IsServerMode() ?? false;
             if (isHost)
             {
-                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
             else
             {
-                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
         }
 
@@ -1926,7 +1942,7 @@ namespace MegabonkTogether.Services
                     OwnerId = playerManagerService.GetLocalPlayer().ConnectionId
                 };
 
-                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
             else
             {
@@ -1953,7 +1969,7 @@ namespace MegabonkTogether.Services
                         PickupId = pickupId,
                         PlayerId = currentOwnerId.Value
                     };
-                    udpClientService.SendToAllClients(msg, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                    udpClientService.SendToAllClients(msg, LiteNetLib.DeliveryMethod.ReliableUnordered);
                 }
 
                 return;
@@ -1967,7 +1983,7 @@ namespace MegabonkTogether.Services
                 PlayerId = ownerId
             };
 
-            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             OnReceivedPickupFollowingPlayer((PickupFollowingPlayer)message);
         }
 
@@ -1983,7 +1999,7 @@ namespace MegabonkTogether.Services
                 PickupId = pickupId,
                 PlayerId = ownerId
             };
-            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
         }
 
         public void OnSpawnedChest(Vector3 position, Quaternion rotation, UnityEngine.Object obj)
@@ -3881,7 +3897,7 @@ namespace MegabonkTogether.Services
                 OwnerId = ownerId
             };
 
-            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+            udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
         }
 
         private void OnReceivedLightningStrike(LightningStrike lightningStrike)
@@ -4373,11 +4389,11 @@ namespace MegabonkTogether.Services
             var isHost = IsServerMode() ?? false;
             if (isHost)
             {
-                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
             else
             {
-                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
 
             }
         }
@@ -4451,11 +4467,11 @@ namespace MegabonkTogether.Services
             var isHost = IsServerMode() ?? false;
             if (isHost)
             {
-                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToAllClients(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
             else
             {
-                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableOrdered);
+                udpClientService.SendToHost(message, LiteNetLib.DeliveryMethod.ReliableUnordered);
             }
         }
 

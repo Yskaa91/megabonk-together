@@ -43,6 +43,14 @@ More info at [Notable Network Changes](./NETPLAY_CHANGES.md)
 <details>
 <summary>📋 Click to view full changelog</summary>
 
+### v5.3.0
+
+- 🔧 **Fixed client desyncs with 3+ players**: high-frequency state and combat updates no longer flood the reliable channel, so chests, damage, weapons and interactions stay in sync for every client
+- 🛡️ **Fixed clients silently stopping all outgoing actions**: a single exception in a network handler could leave the message-suppression flag stuck; flags are now always restored
+- 🔁 **Fixed damage echo / double application**: received damage is no longer re-broadcast by every client
+- 📊 **Added optional network diagnostics**: `LogNetworkDiagnostics` logs peers, reliable queue depth and bytes sent every 5 seconds
+- ⚡ **Reduced bandwidth**: player updates 60 Hz → 30 Hz, large snapshots are split into MTU-safe unreliable packets
+
 ### v5.2.1
 
 - 🛡️ **Reward invulnerability reworked**: Reduced to 5 seconds and now uses the native player invincibility flag, so interacting with objects and chests (E button) works while invulnerable
